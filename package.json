@@ -1,0 +1,32 @@
+{
+  "name": "Mazzard",
+  "version": "0.0.1",
+  "description": "hello world",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d8corp/mazzard.git"
+  },
+  "author": "Deight",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/d8corp/mazzard/issues"
+  },
+  "homepage": "https://github.com/d8corp/mazzard#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-jest": "^22.1.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.5",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "jest": "^22.1.4"
+  },
+  "dependencies": {
+    "mobx": "^4",
+    "type-filter": "3.2.1"
+  }
+}
