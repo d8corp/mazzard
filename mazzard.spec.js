@@ -1,42 +1,42 @@
 /* global it, describe, expect */
-const Mazzard = require('./index.js').default
+const mazzard = require('./index.js').default
 
-describe('Mazzard', () => {
+describe('mazzard', () => {
   describe('simple', () => {
     it('empty', () => {
-      expect(Mazzard()).toBe(undefined)
+      expect(mazzard()).toBe(undefined)
     })
     it('number', () => {
-      expect(Mazzard(0)).toBe(0)
-      expect(Mazzard(1)).toBe(1)
-      expect(Mazzard(1.2)).toBe(1.2)
-      expect(Mazzard(Infinity)).toBe(Infinity)
+      expect(mazzard(0)).toBe(0)
+      expect(mazzard(1)).toBe(1)
+      expect(mazzard(1.2)).toBe(1.2)
+      expect(mazzard(Infinity)).toBe(Infinity)
     })
     it('string', () => {
-      expect(Mazzard('')).toBe('')
-      expect(Mazzard('1')).toBe('1')
-      expect(Mazzard('test')).toBe('test')
+      expect(mazzard('')).toBe('')
+      expect(mazzard('1')).toBe('1')
+      expect(mazzard('test')).toBe('test')
     })
     it('null', () => {
-      expect(Mazzard(null)).toBe(null)
+      expect(mazzard(null)).toBe(null)
     })
     it('bool', () => {
-      expect(Mazzard(false)).toBe(false)
-      expect(Mazzard(true)).toBe(true)
+      expect(mazzard(false)).toBe(false)
+      expect(mazzard(true)).toBe(true)
     })
     it('NaN', () => {
-      expect(Mazzard(NaN)).toBe(NaN)
+      expect(mazzard(NaN)).toBe(NaN)
     })
     it('Symbol', () => {
       const symbol = Symbol('test')
-      expect(Mazzard(symbol)).toBe(symbol)
+      expect(mazzard(symbol)).toBe(symbol)
     })
   })
   describe('observer', () => {
     it('simple', () => {
       const observer = []
-      const test = Mazzard({})
-      Mazzard(() => observer.push(test.testField))
+      const test = mazzard({})
+      mazzard(() => observer.push(test.testField))
 
       expect(observer.length).toBe(1)
       expect(observer[0]).toBe(undefined)
@@ -54,10 +54,10 @@ describe('Mazzard', () => {
     })
     it('stop', () => {
       const observer = []
-      const test = Mazzard({})
+      const test = mazzard({})
       let stopMessage
 
-      Mazzard(stop => {
+      mazzard(stop => {
         if (test.stop) {
           stopMessage = test.stop
           stop()
@@ -89,9 +89,9 @@ describe('Mazzard', () => {
     })
     it('stop outside', () => {
       const observer = []
-      const test = Mazzard({})
+      const test = mazzard({})
 
-      const stop = Mazzard(() => observer.push(test.testField))
+      const stop = mazzard(() => observer.push(test.testField))
 
       expect(observer.length).toBe(1)
       expect(observer[0]).toBe(undefined)
@@ -109,23 +109,43 @@ describe('Mazzard', () => {
       expect(observer.length).toBe(3)
     })
   })
+  describe('action fields', () => {
+    it('simple', () => {
+      const observer = []
+      const test = mazzard({
+        update (field1, field2) {
+          this.field1 = field1
+          this.field2 = field2
+        }
+      })
+
+      mazzard(() => observer.push({field1: test.field1, field2: test.field2}))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toEqual({field1: undefined, field2: undefined})
+
+      test.update(1, 2)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual({field1: 1, field2: 2})
+    })
+  })
   describe('class', () => {
     describe('empty', () => {
-      it('instance of Mazzard', () => {
-        const core = new Mazzard()
-        expect(core instanceof Mazzard).toBe(true)
+      it('instance of mazzard', () => {
+        const core = new mazzard()
+        expect(core instanceof mazzard).toBe(true)
       })
     })
     describe('function', () => {
-      it('instance of Mazzard', () => {
-        const core = new Mazzard(() => {})
-        expect(core instanceof Mazzard).toBe(false)
+      it('instance of mazzard', () => {
+        const core = new mazzard(() => {})
+        expect(core instanceof mazzard).toBe(false)
       })
     })
     describe('object', () => {
-      it('instance of Mazzard', () => {
-        const core = new Mazzard({})
-        expect(core instanceof Mazzard).toBe(false)
+      it('instance of mazzard', () => {
+        const core = new mazzard({})
+        expect(core instanceof mazzard).toBe(false)
       })
     })
   })

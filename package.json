@@ -1,6 +1,6 @@
 {
   "name": "mazzard",
-  "version": "1.0.0",
+  "version": "1.0.0-betta",
   "description": "hello world",
   "main": "index.js",
   "scripts": {
