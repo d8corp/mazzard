@@ -110,7 +110,13 @@ function observe (value, plugins) {
         return true
       }
       delete cache[property]
+      const prevActiveReactions = activeReactions
+      activeReactions = new Set()
       Reflect.set(target, property, value, receiver)
+      if (prevActiveReactions) {
+        activeReactions.forEach(reaction => prevActiveReactions.add(reaction))
+      }
+      activeReactions = prevActiveReactions
       const propReactions = reactions[property]
       delete reactions[property]
       if (propReactions) {
