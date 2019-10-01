@@ -33,6 +33,12 @@ describe('mazzard', () => {
       expect(mazzard(symbol)).toBe(symbol)
     })
   })
+  describe('observable', () => {
+    it('not equals', () => {
+      const test = {}
+      expect(test !== mazzard(test)).toBe(true)
+    })
+  })
   describe('observer', () => {
     it('simple', () => {
       const observer = []
@@ -205,6 +211,90 @@ describe('mazzard', () => {
       test.secondName = 'Tester'
       expect(observer.length).toBe(2)
       expect(observer[1]).toEqual('Mike Tester')
+    })
+  })
+  describe('array', () => {
+    it('not equals', () => {
+      const test = []
+      expect(test !== mazzard(test)).toBe(true)
+    })
+    it('observable', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test[0]))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(undefined)
+
+      test.push(1)
+
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(1)
+
+      test.push(2)
+      expect(observer.length).toBe(2)
+
+      test[0] = 2
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(2)
+    })
+    it('length', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.length))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(0)
+
+      test.push(1)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(1)
+
+      test.push(2)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(2)
+
+      test[0] = 2
+      expect(observer.length).toBe(3)
+
+      test.length = 0
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe(0)
+      expect(test[0]).toBe(undefined)
+
+      test[0] = 1
+      expect(observer.length).toBe(5)
+      expect(observer[4]).toBe(1)
+    })
+    it('join', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.join(', ')))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe('')
+
+      test.push(1)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe('1')
+
+      test.push(2)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe('1, 2')
+
+      action(() => {
+        test[0] = 0
+        test[1] = 1
+      })()
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe('0, 1')
+
+      test[2] = 'test'
+      expect(observer.length).toBe(5)
+      expect(observer[4]).toBe('0, 1, test')
     })
   })
   describe('class', () => {

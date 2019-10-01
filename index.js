@@ -47,7 +47,7 @@ function action (value) {
     }
   }
 }
-function observe (value, plugins) {
+function observe (value, plugin, length) {
   const reactions = Object.create(null)
   const cache = Object.create(null)
   return new Proxy(value, {
@@ -68,16 +68,8 @@ function observe (value, plugins) {
             if (type === 'object') {
               if ((!result.constructor || result.constructor === Object) && !result[MAZZARD]) {
                 result = observe(result)
-              } else if (plugins) {
-                const next = Symbol('Mazzard next')
-                for (const plugin of plugins) {
-                  const pluginResult = plugin(value, next)
-                  if (pluginResult !== next) {
-                    result = pluginResult
-                    break
-                  }
-                }
-                return value
+              } else if (plugin) {
+                result = plugin(result, false)
               }
             } else if (type === 'function') {
               result = action(result)
@@ -126,27 +118,36 @@ function observe (value, plugins) {
           propReactions.forEach(reaction => reaction())
         }
       }
+      if (length) {
+        const id = Math.abs(property|0)
+        if (id + '' === property && cache.length <= id) {
+          delete cache.length
+          const reactionsLength = reactions.length
+          if (reactionsLength) {
+            delete reactions.length
+            if (activeReactions) {
+              reactionsLength.forEach(reaction => activeReactions.add(reaction))
+            } else {
+              reactionsLength.forEach(reaction => reaction())
+            }
+          }
+        }
+      }
       return true
     }
   })
 }
-function mazzard (value, plugins) {
+function defaultPlugin (value) {
+  return value instanceof Array ? observe(value, defaultPlugin, true) : value
+}
+function mazzard (value, plugin = defaultPlugin) {
   if (value === null) return value
   const type = typeof value
   if (type === 'object') {
     if ((!value.constructor || value.constructor === Object) && !value[MAZZARD]) {
-      return observe(value, plugins)
-    } else if (plugins) {
-      const next = Symbol('Mazzard next')
-      for (const plugin of plugins) {
-        const result = plugin(value, next)
-        if (result !== next) {
-          return result
-        }
-      }
-      return value
+      return observe(value, plugin)
     } else {
-      return value
+      return plugin(value, true)
     }
   } else if (type === 'function') {
     return observer(value)
@@ -155,8 +156,8 @@ function mazzard (value, plugins) {
   }
 }
 class Mazzard {
-  constructor (plugins) {
-    return mazzard(this, plugins)
+  constructor (plugin) {
+    return mazzard(this, plugin)
   }
 }
 
@@ -171,3 +172,4 @@ exports.setActiveReaction = setActiveReaction
 exports.getActiveReaction = getActiveReaction
 exports.setActiveReactions = setActiveReactions
 exports.getActiveReactions = getActiveReactions
+exports.defaultPlugin = defaultPlugin

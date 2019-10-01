@@ -3,7 +3,7 @@
 ```bash
 npm i mazzard
 ```
-Next, we will use `mazzard` which means we imported it from `mazzard`
+Next, we will use `mazzard` which means we imported it from `mazzard`.
 ```javascript
 import mazzard from 'mazzard'
 
@@ -11,7 +11,7 @@ mazzard() // undefined
 ```
 
 ### Unexpected arguments
-`mazzard` returns the first argument as is, if it is not function or simple object
+`mazzard` returns the first argument as is, if it is not `function`, `array` or `simple object`.
 ```javascript
 mazzard(1) // 1
 mazzard('1') // '1'
@@ -23,7 +23,7 @@ mazzard(new Map()) // instance of Map
 ```
 
 ### Observable object
-You get the observable object if the first argument is simple object
+You get the observable object if the first argument is `simple object`.
 ```javascript
 const observable = mazzard({test: 'success'})
 console.log(observable.test)
@@ -77,12 +77,12 @@ test.stop = 'test message'
 test.testField = 'test'
 // nothing happens
 ```
-Also, you may stop it with that mazzard returns
+Also, you may stop it with that mazzard returns.
 ```javascript
 const stop = mazzard(() => {})
 stop()
 ```
-If you set the same value which a field have then reaction will not be called
+If you set the same value which a field have then reaction will not be called.
 ```javascript
 const test = mazzard({})
 
@@ -96,7 +96,7 @@ test.testField = true
 // nothing happens
 ```
 ### United changes
-If you wanna have only one reaction of observer on several changes, you may use a method of observable object
+If you wanna have only one reaction of observer on several changes, you may use a method of observable object.
 ```javascript
 const test = mazzard({
   update (field1, field2) {
@@ -119,7 +119,7 @@ test.field2 = 'field2'
 test.update(1, 2)
 // > 1, 2
 ```
-You may unite changes with `action` from `mazzard`
+You may unite changes with `action` from `mazzard`.
 ```javascript
 import {action} from 'mazzard'
 
@@ -136,7 +136,7 @@ mazzard(() => console.log(test.field1, test.field2))
 update(1, 2)
 // > 1, 2
 ```
-The same will happen for setters
+The same will happen for setters.
 ```javascript
 const test = mazzard({
   set fullName (value) {
@@ -153,7 +153,7 @@ test.fullName = 'Mike Mighty'
 // > 'Mike', 'Mighty'
 ```
 ### Computed value
-Use getters in observable to have computed value with caching
+Use getters in observable to have computed value with caching.
 ```javascript
 const test = mazzard({
   get fullName () {
@@ -170,3 +170,9 @@ test.name = 'Mike'
 test.secondName = 'Mighty'
 // > 'Mike Mighty'
 ```
+### Observable array
+You get the observable array if the first argument is `array`.
+```javascript
+mazzard([]) // observable array
+```
+All changes on the array make reactions.
