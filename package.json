@@ -1,10 +1,10 @@
 {
   "name": "mazzard",
-  "version": "1.0.0-betta",
-  "description": "hello world",
+  "version": "1.0.0-rc",
+  "description": "Get reactions on data changes",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest index.spec.js"
   },
   "repository": {
     "type": "git",
