@@ -47,9 +47,7 @@ function action (value) {
     }
   }
 }
-function observe (value, plugin, length) {
-  const reactions = Object.create(null)
-  const cache = Object.create(null)
+function observe (value, plugin, cache = Object.create(null), reactions = Object.create(null)) {
   return new Proxy(value, {
     get (target, property, receiver) {
       if (property === MAZZARD) return true
@@ -58,44 +56,43 @@ function observe (value, plugin, length) {
           reactions[property] = new Set()
         }
         reactions[property].add(activeReaction)
-        if (property in cache) {
-          return cache[property]
-        }
-        observer(stop => {
-          let result = Reflect.get(target, property, receiver)
-          if (result !== null) {
-            const type = typeof result
-            if (type === 'object') {
-              if ((!result.constructor || result.constructor === Object) && !result[MAZZARD]) {
-                result = observe(result)
-              } else if (plugin) {
-                result = plugin(result, false)
-              }
-            } else if (type === 'function') {
-              result = action(result)
-            }
-          }
-          if (property in cache) {
-            if (cache[property] !== result) {
-              cache[property] = result
-              stop()
-              const propReactions = reactions[property]
-              delete reactions[property]
-              if (activeReactions) {
-                propReactions.forEach(reaction => activeReactions.add(reaction))
-              } else {
-                propReactions.forEach(reaction => reaction())
-              }
-            }
-          } else {
-            cache[property] = result
-          }
-        })
-        return cache[property]
-      } else {
-        const result = Reflect.get(target, property, receiver)
-        return typeof result === 'function' ? action(result) : result
       }
+      if (property in cache) {
+        return cache[property]
+      }
+      observer(stop => {
+        let result = Reflect.get(target, property, receiver)
+        if (result !== null) {
+          const type = typeof result
+          if (type === 'object') {
+            if ((!result.constructor || result.constructor === Object)) {
+              if (!result[MAZZARD]) {
+                result = observe(result, plugin)
+              }
+            } else if (plugin) {
+              result = plugin(result, cache, reactions)
+            }
+          } else if (type === 'function') {
+            result = action(result)
+          }
+        }
+        if (property in cache) {
+          if (cache[property] !== result) {
+            cache[property] = result
+            stop()
+            const propReactions = reactions[property]
+            delete reactions[property]
+            if (activeReactions) {
+              propReactions.forEach(reaction => activeReactions.add(reaction))
+            } else {
+              propReactions.forEach(reaction => reaction())
+            }
+          }
+        } else {
+          cache[property] = result
+        }
+      })
+      return cache[property]
     },
     set (target, property, value, receiver) {
       if (cache[property] === value) {
@@ -118,36 +115,21 @@ function observe (value, plugin, length) {
           propReactions.forEach(reaction => reaction())
         }
       }
-      if (length) {
-        const id = Math.abs(property|0)
-        if (id + '' === property && cache.length <= id) {
-          delete cache.length
-          const reactionsLength = reactions.length
-          if (reactionsLength) {
-            delete reactions.length
-            if (activeReactions) {
-              reactionsLength.forEach(reaction => activeReactions.add(reaction))
-            } else {
-              reactionsLength.forEach(reaction => reaction())
-            }
-          }
-        }
-      }
       return true
     }
   })
 }
 function defaultPlugin (value) {
-  return value instanceof Array ? observe(value, defaultPlugin, true) : value
+  return value instanceof Array && !value[MAZZARD] ? observe(value, defaultPlugin) : value
 }
 function mazzard (value, plugin = defaultPlugin) {
   if (value === null) return value
   const type = typeof value
   if (type === 'object') {
-    if ((!value.constructor || value.constructor === Object) && !value[MAZZARD]) {
-      return observe(value, plugin)
+    if ((!value.constructor || value.constructor === Object)) {
+      return value[MAZZARD] ? value : observe(value, plugin)
     } else {
-      return plugin(value, true)
+      return plugin(value)
     }
   } else if (type === 'function') {
     return observer(value)
@@ -157,7 +139,7 @@ function mazzard (value, plugin = defaultPlugin) {
 }
 class Mazzard {
   constructor (plugin) {
-    return mazzard(this, plugin)
+    return mazzard(this, plugin || defaultPlugin)
   }
 }
 

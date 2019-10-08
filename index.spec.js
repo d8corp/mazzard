@@ -1,6 +1,8 @@
 /* global it, describe, expect */
 const mazzard = require('./index.js').default
 const action = require('./index.js').action
+const MAZZARD = require('./index.js').MAZZARD
+const array = require('./array.js').default
 
 describe('mazzard', () => {
   describe('simple', () => {
@@ -37,6 +39,10 @@ describe('mazzard', () => {
     it('not equals', () => {
       const test = {}
       expect(test !== mazzard(test)).toBe(true)
+    })
+    it('is mazzard', () => {
+      const test = mazzard({})
+      expect(test[MAZZARD]).toBe(true)
     })
   })
   describe('observer', () => {
@@ -238,10 +244,13 @@ describe('mazzard', () => {
       test[0] = 2
       expect(observer.length).toBe(3)
       expect(observer[2]).toBe(2)
+
+      test[1] = 3
+      expect(observer.length).toBe(3)
     })
     it('length', () => {
       const observer = []
-      const test = mazzard([])
+      const test = mazzard([], array)
 
       mazzard(() => observer.push(test.length))
 
@@ -263,10 +272,75 @@ describe('mazzard', () => {
       expect(observer.length).toBe(4)
       expect(observer[3]).toBe(0)
       expect(test[0]).toBe(undefined)
+      expect(observer.length).toBe(4)
 
       test[0] = 1
       expect(observer.length).toBe(5)
       expect(observer[4]).toBe(1)
+    })
+    it('field', () => {
+      const observer = []
+      const test = mazzard({array: []}, array)
+
+      mazzard(() => observer.push(test.array.join(', ')))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe('')
+
+      test.array.push(1)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe('1')
+
+      test.array.push(2)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe('1, 2')
+
+      action(() => {
+        test.array[0] = 0
+        test.array[1] = 1
+      })()
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe('0, 1')
+
+      test.array[2] = 'test'
+      expect(observer.length).toBe(5)
+      expect(observer[4]).toBe('0, 1, test')
+    })
+    it('copyWithin', () => {
+      const observer = []
+      const test = mazzard([1, 2, 3])
+
+      mazzard(() => observer.push(test.join(', ')))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe('1, 2, 3')
+
+      test.copyWithin(0, 1)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe('2, 3, 3')
+    })
+    it('entries', () => {
+      const observer = []
+      const test = mazzard([1, 2, 3])
+
+      mazzard(() => {
+        const testEnt = test.entries()
+        observer.push([testEnt.next().value, testEnt.next().value, testEnt.next().value])
+      })
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toEqual([[0, 1], [1, 2], [2, 3]])
+
+      test[0] = 0
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual([[0, 0], [1, 2], [2, 3]])
+
+      test[3] = 4
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual([[0, 0], [1, 2], [2, 3]])
+
+      test[3] = 5
+      expect(observer.length).toBe(2)
     })
     it('join', () => {
       const observer = []
@@ -291,10 +365,158 @@ describe('mazzard', () => {
       })()
       expect(observer.length).toBe(4)
       expect(observer[3]).toBe('0, 1')
+    })
+    it('map', () => {
+      const observer = []
+      const test = mazzard([])
 
-      test[2] = 'test'
-      expect(observer.length).toBe(5)
-      expect(observer[4]).toBe('0, 1, test')
+      mazzard(() => observer.push(test.map(e => e * e).join(', ')))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe('')
+
+      test.push(1)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe('1')
+
+      test.push(2)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe('1, 4')
+
+      test.push(3)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe('1, 4, 9')
+    })
+    it('every', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.every(e => e > 10)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(true)
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(true)
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(true)
+
+      test.push(8)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe(false)
+    })
+    it('fill', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.fill(true)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toEqual([])
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual([true])
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toEqual([true, true])
+
+      test.push(8)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toEqual([true, true, true])
+      expect(observer[0]).toEqual([true, true, true])
+    })
+    it('filter', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.filter(e => e < 10)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toEqual([])
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual([])
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toEqual([])
+
+      test.push(8)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toEqual([8])
+    })
+    it('find', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.find(e => e < 10)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(undefined)
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(undefined)
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(undefined)
+
+      test.push(8)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe(8)
+    })
+    it('findIndex', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.findIndex(e => e < 10)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(-1)
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(-1)
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(-1)
+
+      test.push(8)
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe(2)
+    })
+    it('includes', () => {
+      const observer = []
+      const test = mazzard([])
+
+      mazzard(() => observer.push(test.includes(13)))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(false)
+
+      test.push(42)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(false)
+
+      test.push(13)
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(true)
+    })
+  })
+  describe('array plugin', () => {
+    it('concat', () => {
+      const test = mazzard([1, 2], array).concat([3, 4])
+      expect(test).toEqual([1, 2, 3, 4])
+      expect(test[MAZZARD]).toBe(true)
+      expect(test.concat([5, 6])[MAZZARD]).toBe(true)
     })
   })
   describe('class', () => {
