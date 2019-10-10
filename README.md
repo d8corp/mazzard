@@ -29,7 +29,7 @@ const observable = mazzard({test: 'success'})
 console.log(observable.test)
 // > 'success'
 ```
-All objects inside observable is observable.
+All objects inside observable are observable.
 ```javascript
 const test = mazzard({observableField: {}})
 test // is observable object
