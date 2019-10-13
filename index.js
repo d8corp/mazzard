@@ -95,25 +95,28 @@ function observe (value, plugin, cache = Object.create(null), reactions = Object
       return cache[property]
     },
     set (target, property, value, receiver) {
-      if (cache[property] === value) {
-        return true
-      }
-      delete cache[property]
-      const prevActiveReactions = activeReactions
+      const prevReactions = activeReactions
       activeReactions = new Set()
       Reflect.set(target, property, value, receiver)
-      if (prevActiveReactions) {
-        activeReactions.forEach(reaction => prevActiveReactions.add(reaction))
-      }
-      activeReactions = prevActiveReactions
-      const propReactions = reactions[property]
-      delete reactions[property]
-      if (propReactions) {
-        if (activeReactions) {
-          propReactions.forEach(reaction => activeReactions.add(reaction))
-        } else {
-          propReactions.forEach(reaction => reaction())
+      if (cache[property] !== target[property]) {
+        delete cache[property]
+        const propReactions = reactions[property]
+        delete reactions[property]
+        if (propReactions) {
+          if (prevReactions) {
+            propReactions.forEach(reaction => prevReactions.add(reaction))
+          } else {
+            propReactions.forEach(reaction => activeReactions.add(reaction))
+          }
         }
+      }
+      if (prevReactions) {
+        activeReactions.forEach(reaction => prevReactions.add(reaction))
+        activeReactions = prevReactions
+      } else {
+        const currentReactions = activeReactions
+        activeReactions = prevReactions
+        currentReactions.forEach(reaction => reaction())
       }
       return true
     }
@@ -139,7 +142,7 @@ function mazzard (value, plugin = defaultPlugin) {
 }
 class Mazzard {
   constructor (plugin) {
-    return mazzard(this, plugin || defaultPlugin)
+    return observe(this, plugin || defaultPlugin)
   }
 }
 

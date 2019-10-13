@@ -196,6 +196,45 @@ describe('mazzard', () => {
       expect(observer.length).toBe(2)
       expect(observer[1]).toEqual('Mike Deight')
     })
+    it('setter with getter', () => {
+      const name = []
+      const fullName = []
+      const secondName = []
+      const test = mazzard({
+        get fullName () {
+          return this.name && this.secondName ? `${this.name} ${this.secondName}` : null
+        },
+        set fullName (value) {
+          const [name, secondName] = value.split(' ')
+          this.name = name
+          this.secondName = secondName
+        }
+      })
+
+      mazzard(() => fullName.push(test.fullName))
+      mazzard(() => name.push(test.name))
+      mazzard(() => secondName.push(test.secondName))
+
+      expect(fullName.length).toBe(1)
+      expect(fullName[0]).toEqual(null)
+      expect(name.length).toBe(1)
+      expect(name[0]).toEqual(undefined)
+      expect(secondName.length).toBe(1)
+      expect(secondName[0]).toEqual(undefined)
+
+      test.fullName = 'Mike'
+      expect(fullName.length).toBe(1)
+      expect(name.length).toBe(2)
+      expect(name[1]).toEqual('Mike')
+      expect(secondName.length).toBe(1)
+
+      test.fullName = 'Mike Deight'
+      expect(fullName.length).toBe(2)
+      expect(fullName[1]).toEqual('Mike Deight')
+      expect(name.length).toBe(2)
+      expect(secondName.length).toBe(2)
+      expect(secondName[1]).toEqual('Deight')
+    })
   })
   describe('computed', () => {
     it('simple', () => {
