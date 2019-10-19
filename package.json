@@ -1,6 +1,6 @@
 {
   "name": "mazzard",
-  "version": "1.0.0-rc-1",
+  "version": "1.0.0-rc-2",
   "description": "Get reactions on data changes",
   "main": "index.js",
   "scripts": {

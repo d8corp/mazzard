@@ -5,9 +5,10 @@ const MAZZARD = require('./index.js').MAZZARD
 const array = require('./array.js').default
 
 describe('mazzard', () => {
-  describe('simple', () => {
+  describe('primitives', () => {
     it('empty', () => {
       expect(mazzard()).toBe(undefined)
+      expect(mazzard(undefined)).toBe(undefined)
     })
     it('number', () => {
       expect(mazzard(0)).toBe(0)
@@ -43,85 +44,82 @@ describe('mazzard', () => {
     it('is mazzard', () => {
       const test = mazzard({})
       expect(test[MAZZARD]).toBe(true)
+      expect(MAZZARD in test).toBe(true)
     })
   })
   describe('observer', () => {
-    it('simple', () => {
-      const observer = []
+    it('with observable', () => {
+      const log = []
       const test = mazzard({})
-      mazzard(() => observer.push(test.testField))
+      mazzard(() => log.push(test.testField))
 
-      expect(observer.length).toBe(1)
-      expect(observer[0]).toBe(undefined)
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(undefined)
 
       test.someField = true
-      expect(observer.length).toBe(1)
+      expect(log.length).toBe(1)
 
       test.testField = true
-      expect(observer.length).toBe(2)
-      expect(observer[1]).toBe(true)
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(true)
 
       test.testField = 'test'
-      expect(observer.length).toBe(3)
-      expect(observer[2]).toBe('test')
+      expect(log.length).toBe(3)
+      expect(log[2]).toBe('test')
+
+      test.testField = undefined
+      expect(log.length).toBe(4)
+      expect(log[3]).toBe(undefined)
     })
     it('stop', () => {
-      const observer = []
-      const test = mazzard({})
-      let stopMessage
+      const log = []
+      const test = mazzard({count: 0})
+      let stopped = false
 
       mazzard(stop => {
-        if (test.stop) {
-          stopMessage = test.stop
+        if (test.count > 1) {
+          stopped = true
           stop()
         } else {
-          observer.push(test.testField)
+          log.push(test.count)
         }
       })
 
-      expect(observer.length).toBe(1)
-      expect(observer[0]).toBe(undefined)
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(0)
+      expect(stopped).toBe(false)
 
-      test.someField = true
-      expect(observer.length).toBe(1)
+      test.count++
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(1)
+      expect(stopped).toBe(false)
 
-      test.testField = true
-      expect(observer.length).toBe(2)
-      expect(observer[1]).toBe(true)
-
-      test.testField = 1
-      expect(observer.length).toBe(3)
-      expect(observer[2]).toBe(1)
-
-      test.stop = 'stop message'
-      expect(observer.length).toBe(3)
-      expect(stopMessage).toBe('stop message')
-
-      test.testField = 2
-      expect(observer.length).toBe(3)
+      test.count++
+      expect(log.length).toBe(2)
+      expect(stopped).toBe(true)
     })
     it('stop outside', () => {
-      const observer = []
+      const log = []
       const test = mazzard({})
 
-      const stop = mazzard(() => observer.push(test.testField))
+      const stop = mazzard(() => log.push(test.testField))
 
-      expect(observer.length).toBe(1)
-      expect(observer[0]).toBe(undefined)
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(undefined)
 
       test.testField = true
-      expect(observer.length).toBe(2)
-      expect(observer[1]).toBe(true)
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(true)
 
       test.testField = 1
-      expect(observer.length).toBe(3)
-      expect(observer[2]).toBe(1)
+      expect(log.length).toBe(3)
+      expect(log[2]).toBe(1)
 
       stop()
       test.testField = 2
-      expect(observer.length).toBe(3)
+      expect(log.length).toBe(3)
     })
-    it('the same value', () => {
+    it('set the same value', () => {
       const observer = []
       const test = mazzard({})
 
@@ -136,6 +134,89 @@ describe('mazzard', () => {
 
       test.testField = true
       expect(observer.length).toBe(2)
+
+      test.testField = false
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(false)
+    })
+    it('delete', () => {
+      const observer = []
+      const test = mazzard({})
+
+      mazzard(() => observer.push(test.testField))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(undefined)
+
+      test.testField = true
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(true)
+
+      delete test.testField
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(undefined)
+
+      delete test.testField
+      expect(observer.length).toBe(3)
+
+      test.testField = false
+      expect(observer.length).toBe(4)
+      expect(observer[3]).toBe(false)
+    })
+    it('in', () => {
+      const observer = []
+      const test = mazzard({})
+
+      mazzard(() => observer.push('testField' in test))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toBe(false)
+
+      test.testField = true
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toBe(true)
+
+      test.testField = false
+      expect(observer.length).toBe(2)
+
+      delete test.testField
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toBe(false)
+
+      delete test.testField
+      expect(observer.length).toBe(3)
+    })
+    it('for in', () => {
+      const test = mazzard({})
+      let count = 0
+      let log = []
+
+      mazzard(() => {
+        count++
+        log = []
+        for (const key in test) {
+          log.push(key)
+        }
+      })
+
+      expect(count).toBe(1)
+      expect(log).toEqual([])
+
+      test.test1 = true
+      expect(count).toBe(2)
+      expect(log).toEqual(['test1'])
+
+      test.test1 = false
+      expect(count).toBe(2)
+      expect(log).toEqual(['test1'])
+
+      test.test2 = undefined
+      expect(count).toBe(3)
+      expect(log).toEqual(['test1', 'test2'])
+
+      delete test.test2
+      expect(count).toBe(4)
+      expect(log).toEqual(['test1'])
     })
   })
   describe('action', () => {
@@ -256,6 +337,45 @@ describe('mazzard', () => {
       test.secondName = 'Tester'
       expect(observer.length).toBe(2)
       expect(observer[1]).toEqual('Mike Tester')
+
+      test.secondName = 'Mighty'
+      expect(observer.length).toBe(3)
+      expect(observer[2]).toEqual('Mike Mighty')
+    })
+    it('getter inside getter', () => {
+      const shortName = []
+      const fullName = []
+      const test = mazzard({
+        get fullName () {
+          return this.name && this.secondName ? `${this.name} ${this.secondName}` : undefined
+        },
+        get shortName () {
+          return this.fullName && this.fullName.match(/^([^ ]+ [A-Za-z])/)[1] + '.'
+        }
+      })
+
+      mazzard(() => fullName.push(test.fullName))
+      mazzard(() => shortName.push(test.shortName))
+
+      expect(fullName.length).toBe(1)
+      expect(fullName[0]).toEqual(undefined)
+      expect(shortName.length).toBe(1)
+      expect(shortName[0]).toEqual(undefined)
+
+      test.name = 'Mike'
+      expect(fullName.length).toBe(1)
+      expect(shortName.length).toBe(1)
+
+      test.secondName = 'Mighty'
+      expect(fullName.length).toBe(2)
+      expect(fullName[1]).toEqual('Mike Mighty')
+      expect(shortName.length).toBe(2)
+      expect(shortName[1]).toEqual('Mike M.')
+
+      test.secondName = 'Mr'
+      expect(fullName.length).toBe(3)
+      expect(fullName[2]).toEqual('Mike Mr')
+      expect(shortName.length).toBe(2)
     })
   })
   describe('array', () => {
@@ -289,7 +409,7 @@ describe('mazzard', () => {
     })
     it('length', () => {
       const observer = []
-      const test = mazzard([], array)
+      const test = mazzard([])
 
       mazzard(() => observer.push(test.length))
 
@@ -310,16 +430,15 @@ describe('mazzard', () => {
       test.length = 0
       expect(observer.length).toBe(4)
       expect(observer[3]).toBe(0)
-      expect(test[0]).toBe(undefined)
+      expect(test[0]).toBe(2)
       expect(observer.length).toBe(4)
 
       test[0] = 1
-      expect(observer.length).toBe(5)
-      expect(observer[4]).toBe(1)
+      expect(observer.length).toBe(4)
     })
     it('field', () => {
       const observer = []
-      const test = mazzard({array: []}, array)
+      const test = mazzard({array: []})
 
       mazzard(() => observer.push(test.array.join(', ')))
 
@@ -342,8 +461,7 @@ describe('mazzard', () => {
       expect(observer[3]).toBe('0, 1')
 
       test.array[2] = 'test'
-      expect(observer.length).toBe(5)
-      expect(observer[4]).toBe('0, 1, test')
+      expect(observer.length).toBe(4)
     })
     it('copyWithin', () => {
       const observer = []
@@ -489,6 +607,10 @@ describe('mazzard', () => {
       test.push(8)
       expect(observer.length).toBe(4)
       expect(observer[3]).toEqual([8])
+
+      test[0] = 9
+      expect(observer.length).toBe(5)
+      expect(observer[4]).toEqual([9, 8])
     })
     it('find', () => {
       const observer = []
