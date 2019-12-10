@@ -18,26 +18,8 @@
     "url": "https://github.com/d8corp/mazzard/issues"
   },
   "main": "index.js",
-  "scripts": {
-    "build": "bin/release",
-    "major": "bin/release major",
-    "minor": "bin/release minor",
-    "patch": "bin/release patch",
-    "test": "jest src"
-  },
   "dependencies": {
     "@babel/runtime": "^7.7.6",
     "core-js": "^3.4.8"
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.5.5",
-    "@babel/core": "^7.5.5",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-transform-runtime": "^7.6.0",
-    "@babel/preset-env": "^7.5.5",
-    "babel-preset-minify": "^0.5.1",
-    "fsevents": "^2.1.2",
-    "jest": "^24.9.0",
-    "rimraf": "^2.6.3"
   }
 }

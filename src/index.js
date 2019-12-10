@@ -1,8 +1,9 @@
-"use strict"
-Object.defineProperty(exports, "__esModule", {
-  value: true
-})
-
+/**
+ * Copyright (c) 2019-present, Mikhail Lysikov.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 let activeReaction
 let activeReactions
 const MAZZARD = Symbol('Mazzard instance')
@@ -50,6 +51,7 @@ function observe (value, plugin, values = Object.create(null), reactions = Objec
   if (!('reactions' in inCache)) {
     inCache.reactions = new Set()
   }
+  const smartSet = {}
   return new Proxy(value, {
     get (target, property, receiver) {
       if (property === MAZZARD) return true
@@ -67,7 +69,7 @@ function observe (value, plugin, values = Object.create(null), reactions = Objec
         return values[property]
       }
       observer(() => {
-        let result = Reflect.get(target, property, receiver)
+        let result = property in smartSet ? smartSet[property] : Reflect.get(target, property, receiver)
         if (result !== null) {
           const type = typeof result
           if (type === 'object') {
@@ -120,7 +122,7 @@ function observe (value, plugin, values = Object.create(null), reactions = Objec
       activeReactions = new Set()
       const newProp = !Reflect.has(target, property)
       Reflect.set(target, property, value, receiver)
-      const newValue = target[property]
+      const newValue = smartSet[property] = target[property]
       if (values[property] !== newValue) {
         values[property] = newValue
         const propReactions = reactions[property]
@@ -268,15 +270,18 @@ class Mazzard {
   }
 }
 
-exports.default = mazzard
-exports.mazzard = mazzard
-exports.Mazzard = Mazzard
-exports.observer = observer
-exports.action = action
-exports.observe = observe
-exports.MAZZARD = MAZZARD
-exports.setActiveReaction = setActiveReaction
-exports.getActiveReaction = getActiveReaction
-exports.setActiveReactions = setActiveReactions
-exports.getActiveReactions = getActiveReactions
-exports.defaultPlugin = defaultPlugin
+export default mazzard
+
+export {
+  mazzard,
+  Mazzard,
+  observer,
+  action,
+  observe,
+  MAZZARD,
+  setActiveReaction,
+  getActiveReaction,
+  setActiveReactions,
+  getActiveReactions,
+  defaultPlugin
+}

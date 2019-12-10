@@ -1,8 +1,6 @@
 /* global it, describe, expect */
-const mazzard = require('./index.js').default
-const action = require('./index.js').action
-const MAZZARD = require('./index.js').MAZZARD
-const array = require('./array.js').default
+import {mazzard, MAZZARD, action, Mazzard} from '.'
+import array from './array'
 
 describe('mazzard', () => {
   describe('primitives', () => {
@@ -39,6 +37,8 @@ describe('mazzard', () => {
   describe('observable', () => {
     it('not equals', () => {
       const test = {}
+      expect(mazzard(test)).toEqual(test)
+      expect(mazzard(test)).not.toBe(test)
       expect(test !== mazzard(test)).toBe(true)
     })
     it('is mazzard', () => {
@@ -218,6 +218,54 @@ describe('mazzard', () => {
       expect(count).toBe(4)
       expect(log).toEqual(['test1'])
     })
+    it('observer in observer', () => {
+      const test = mazzard({})
+      let log1 = []
+      let log2 = []
+
+      mazzard(() => {
+        log1.push(test.test1)
+        mazzard(() => {
+          log2.push(test.test2)
+        })
+      })
+
+      expect(log1).toEqual([undefined])
+      expect(log2).toEqual([undefined])
+
+      test.test2 = 2
+
+      expect(log1).toEqual([undefined])
+      expect(log2).toEqual([undefined, 2])
+
+      test.test1 = 1
+
+      expect(log1).toEqual([undefined, 1])
+      expect(log2).toEqual([undefined, 2, 2])
+    })
+    it('observer in observer with changing', () => {
+      const test = mazzard({})
+      let log1 = []
+      let log2 = []
+
+      mazzard(() => {
+        log1.push(test.test1)
+        mazzard(() => log2.push(test.test1 = test.test2))
+      })
+
+      expect(log1).toEqual([undefined])
+      expect(log2).toEqual([undefined])
+
+      test.test2 = 2
+
+      expect(log1).toEqual([undefined, 2])
+      expect(log2).toEqual([undefined, 2, 2])
+
+      test.test1 = 1
+
+      expect(log1).toEqual([undefined, 2, 1, 2])
+      expect(log2).toEqual([undefined, 2, 2, 2, 2])
+    })
   })
   describe('action', () => {
     it('simple', () => {
@@ -281,8 +329,10 @@ describe('mazzard', () => {
       const name = []
       const fullName = []
       const secondName = []
+      let count = 0
       const test = mazzard({
         get fullName () {
+          count++
           return this.name && this.secondName ? `${this.name} ${this.secondName}` : null
         },
         set fullName (value) {
@@ -296,6 +346,7 @@ describe('mazzard', () => {
       mazzard(() => name.push(test.name))
       mazzard(() => secondName.push(test.secondName))
 
+      expect(count).toBe(1)
       expect(fullName.length).toBe(1)
       expect(fullName[0]).toEqual(null)
       expect(name.length).toBe(1)
@@ -304,12 +355,14 @@ describe('mazzard', () => {
       expect(secondName[0]).toEqual(undefined)
 
       test.fullName = 'Mike'
+      expect(count).toBe(2)
       expect(fullName.length).toBe(1)
       expect(name.length).toBe(2)
       expect(name[1]).toEqual('Mike')
       expect(secondName.length).toBe(1)
 
       test.fullName = 'Mike Deight'
+      expect(count).toBe(3)
       expect(fullName.length).toBe(2)
       expect(fullName[1]).toEqual('Mike Deight')
       expect(name.length).toBe(2)
@@ -671,6 +724,34 @@ describe('mazzard', () => {
       expect(observer.length).toBe(3)
       expect(observer[2]).toBe(true)
     })
+    it('smart iteration', () => {
+      const test = mazzard(['test1', 'test2'])
+      const result = []
+      const log = []
+      let length = test.length
+      let i = 0
+      while (i < length) {
+        const j = i
+        mazzard(() => {
+          log.push({change: j, to: test[j]})
+          result[j] = test[j]
+        })
+        i++
+      }
+
+      mazzard(() => {
+        if (test.length > result.length) {
+
+        } else {
+
+        }
+      })
+      expect(result).toEqual(['test1', 'test2'])
+      expect(log).toEqual([{change: 0, to: 'test1'}, {change: 1, to: 'test2'}])
+      test[0] = 'super test'
+      expect(result).toEqual(['super test', 'test2'])
+      expect(log).toEqual([{change: 0, to: 'test1'}, {change: 1, to: 'test2'}, {change: 0, to: 'super test'}])
+    })
   })
   describe('array plugin', () => {
     it('concat', () => {
@@ -697,6 +778,110 @@ describe('mazzard', () => {
       it('instance of mazzard', () => {
         const core = new mazzard({})
         expect(core instanceof mazzard).toBe(false)
+      })
+    })
+  })
+  describe('Mazzard', () => {
+    describe('simple', () => {
+      it('instance of Mazzard', () => {
+        const core = new Mazzard()
+        expect(core instanceof Mazzard).toBe(true)
+      })
+      it('observable', () => {
+        const core = new Mazzard()
+        const log = []
+
+        mazzard(() => log.push(core.test))
+
+        expect(log.length).toBe(1)
+        expect(log[0]).toBe(undefined)
+
+        core.test = 'success'
+
+        expect(log.length).toBe(2)
+        expect(log[1]).toBe('success')
+
+        core.test = 'success'
+        expect(log.length).toBe(2)
+
+        core.test = 'error'
+        expect(log.length).toBe(3)
+        expect(log[2]).toBe('error')
+      })
+      it('action', () => {
+        const core = new Mazzard()
+        const log = []
+
+        mazzard(() => log.push([core.test1, core.test2]))
+
+        expect(log.length).toBe(1)
+        expect(log[0]).toEqual([undefined, undefined])
+
+        core.test = function () {
+          core.test1 = true
+          core.test2 = true
+        }
+
+        expect(log.length).toBe(1)
+
+        core.test()
+
+        expect(log.length).toBe(2)
+        expect(log[1]).toEqual([true, true])
+      })
+    })
+    describe('extends', () => {
+      it('instance of mazzard', () => {
+        class Core extends Mazzard {}
+        const core = new Core()
+        expect(core instanceof Core).toBe(true)
+        expect(core instanceof Mazzard).toBe(true)
+      })
+      it('action', () => {
+        class Core extends Mazzard {
+          test1 = 0
+          test2 = 0
+          test () {
+            this.test1 = 1
+            this.test2 = 2
+          }
+        }
+
+        const core = new Core()
+        const log = []
+
+        mazzard(() => log.push(core.test1 + core.test2))
+
+        expect(log.length).toBe(1)
+        expect(log[0]).toBe(0)
+
+        core.test()
+
+        expect(log.length).toBe(2)
+        expect(log[1]).toBe(3)
+      })
+      it('bonded action', () => {
+        class Core extends Mazzard {
+          test1 = 0
+          test2 = 0
+          test = () => {
+            this.test1 = 1
+            this.test2 = 2
+          }
+        }
+
+        const core = new Core()
+        const log = []
+
+        mazzard(() => log.push(core.test1 + core.test2))
+
+        expect(log.length).toBe(1)
+        expect(log[0]).toBe(0)
+
+        core.test()
+
+        expect(log.length).toBe(2)
+        expect(log[1]).toBe(3)
       })
     })
   })

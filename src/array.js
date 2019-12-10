@@ -1,11 +1,10 @@
-"use strict"
-Object.defineProperty(exports, "__esModule", {
-  value: true
-})
-
-const observe = require('./index.js').observe
-const getActiveReactions = require('./index.js').getActiveReactions
-const MAZZARD = require('./index.js').MAZZARD
+/**
+ * Copyright (c) 2019-present, Mikhail Lysikov.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+import {observe, getActiveReactions, MAZZARD} from '.'
 
 function array (value) {
   if (value instanceof Array && !value[MAZZARD]) {
@@ -44,4 +43,4 @@ function array (value) {
   return value
 }
 
-exports.default = array
+export default array
