@@ -47,7 +47,15 @@ function action (value) {
     }
   }
 }
-function observe (value, plugin, values = Object.create(null), reactions = Object.create(null), valueReactions = Object.create(null), hasReactions = Object.create(null), inCache = Object.create(null)) {
+function observe (
+  value,
+  plugin,
+  values = Object.create(null),
+  reactions = Object.create(null),
+  valueReactions = Object.create(null),
+  hasReactions = Object.create(null),
+  inCache = Object.create(null),
+) {
   if (!('reactions' in inCache)) {
     inCache.reactions = new Set()
   }
@@ -55,6 +63,7 @@ function observe (value, plugin, values = Object.create(null), reactions = Objec
   return new Proxy(value, {
     get (target, property, receiver) {
       if (property === MAZZARD) return true
+      if (property in Object.prototype) return Reflect.get(target, property, receiver)
       if (activeReaction) {
         if (!(property in reactions)) {
           reactions[property] = new Set()
@@ -122,8 +131,22 @@ function observe (value, plugin, values = Object.create(null), reactions = Objec
       activeReactions = new Set()
       const newProp = !Reflect.has(target, property)
       Reflect.set(target, property, value, receiver)
-      const newValue = smartSet[property] = target[property]
+      let newValue = smartSet[property] = target[property]
       if (values[property] !== newValue) {
+        if (newValue !== null) {
+          const type = typeof newValue
+          if (type === 'object') {
+            if ((!newValue.constructor || newValue.constructor === Object)) {
+              if (!newValue[MAZZARD]) {
+                newValue = observe(newValue, plugin)
+              }
+            } else if (plugin) {
+              newValue = plugin(newValue, values, reactions, valueReactions, hasReactions, inCache)
+            }
+          } else if (type === 'function') {
+            newValue = action(newValue)
+          }
+        }
         values[property] = newValue
         const propReactions = reactions[property]
         if (propReactions) {

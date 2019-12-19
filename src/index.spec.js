@@ -35,9 +35,14 @@ describe('mazzard', () => {
     })
   })
   describe('observable', () => {
-    it('not equals', () => {
-      const test = {}
+    it('equals', () => {
+      const test = {
+        test: true
+      }
       expect(mazzard(test)).toEqual(test)
+    })
+    it('not be', () => {
+      const test = {}
       expect(mazzard(test)).not.toBe(test)
       expect(test !== mazzard(test)).toBe(true)
     })
@@ -70,6 +75,66 @@ describe('mazzard', () => {
       test.testField = undefined
       expect(log.length).toBe(4)
       expect(log[3]).toBe(undefined)
+    })
+    it('set first', () => {
+      const log = []
+      const test = mazzard({})
+      test.testField = 1
+      mazzard(() => log.push(test.testField))
+
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(1)
+
+      test.someField = true
+      expect(log.length).toBe(1)
+
+      test.testField = true
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(true)
+
+      test.testField = 'test'
+      expect(log.length).toBe(3)
+      expect(log[2]).toBe('test')
+    })
+    it('deep observer', () => {
+      const log = []
+      const test = mazzard({testField: {value: 1}})
+      mazzard(() => log.push(test.testField.value))
+
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(1)
+
+      test.someField = true
+      expect(log.length).toBe(1)
+
+      test.testField.value = true
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(true)
+
+      test.testField.value = 'test'
+      expect(log.length).toBe(3)
+      expect(log[2]).toBe('test')
+    })
+    it('set deep observer', () => {
+      const log = []
+      const test = mazzard({})
+      test.testField = {
+        value: 1
+      }
+
+      expect(MAZZARD in test.testField).toBe(true)
+      mazzard(() => log.push(test.testField.value))
+
+      expect(log.length).toBe(1)
+      expect(log[0]).toBe(1)
+
+      test.testField.value = true
+      expect(log.length).toBe(2)
+      expect(log[1]).toBe(true)
+
+      test.testField.value = 'test'
+      expect(log.length).toBe(3)
+      expect(log[2]).toBe('test')
     })
     it('stop', () => {
       const log = []
@@ -286,12 +351,34 @@ describe('mazzard', () => {
       expect(observer.length).toBe(2)
       expect(observer[1]).toEqual({field1: 1, field2: 2})
     })
+    it('set action', () => {
+      const observer = []
+      const test = mazzard({})
+
+      const update = (field1, field2) => {
+        test.field1 = field1
+        test.field2 = field2
+      }
+      test.update = update
+
+      expect(test.update).not.toBe(update)
+
+      mazzard(() => observer.push({field1: test.field1, field2: test.field2}))
+
+      expect(observer.length).toBe(1)
+      expect(observer[0]).toEqual({field1: undefined, field2: undefined})
+
+      test.update(1, 2)
+      expect(observer.length).toBe(2)
+      expect(observer[1]).toEqual({field1: 1, field2: 2})
+    })
     it('action', () => {
       const observer = []
       const test = mazzard({})
       const update = action((field1, field2) => {
         test.field1 = field1
         test.field2 = field2
+        return field1 + field2
       })
 
       mazzard(() => observer.push({field1: test.field1, field2: test.field2}))
@@ -299,7 +386,7 @@ describe('mazzard', () => {
       expect(observer.length).toBe(1)
       expect(observer[0]).toEqual({field1: undefined, field2: undefined})
 
-      update(1, 2)
+      expect(update(1, 2)).toBe(3)
       expect(observer.length).toBe(2)
       expect(observer[1]).toEqual({field1: 1, field2: 2})
     })
@@ -817,7 +904,7 @@ describe('mazzard', () => {
         expect(log.length).toBe(1)
         expect(log[0]).toEqual([undefined, undefined])
 
-        core.test = function () {
+        core.test = () => {
           core.test1 = true
           core.test2 = true
         }
